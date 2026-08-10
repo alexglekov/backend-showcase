@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  prices:
+    build: .
+    # image: micro-back_prices:staging
+    command: ['node', './apps/prices/main.js']
+    env_file:
+      - ./apps/prices/.env

@@ -1,0 +1,75 @@
+{
+  "name": "candles",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/candles/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/candles",
+        "main": "apps/candles/src/main.ts",
+        "tsConfig": "apps/candles/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/**/*.proto",
+            "input": "libs/contracts/src",
+            "output": "grpc"
+          },
+          {
+            "glob": "aws-cassandra.crt",
+            "input": "certificates",
+            "output": "certificates"
+          }
+        ],
+        "isolatedConfig": true,
+        "webpackConfig": "apps/candles/webpack.config.js"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "candles:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "candles:build:development"
+        },
+        "production": {
+          "buildTarget": "candles:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/candles/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/candles/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,0 +1,2 @@
+import 'ioredis';
+import 'kafkajs';

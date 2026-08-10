@@ -1,0 +1,70 @@
+{
+  "name": "bulls-eye",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/bulls-eye/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/bulls-eye",
+        "main": "apps/bulls-eye/src/main.ts",
+        "tsConfig": "apps/bulls-eye/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/**/*.proto",
+            "input": "libs/contracts/src",
+            "output": "grpc"
+          }
+        ],
+        "isolatedConfig": true,
+        "webpackConfig": "apps/bulls-eye/webpack.config.js"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "bulls-eye:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "bulls-eye:build:development"
+        },
+        "production": {
+          "buildTarget": "bulls-eye:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/bulls-eye/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/bulls-eye/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

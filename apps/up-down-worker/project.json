@@ -1,0 +1,70 @@
+{
+  "name": "up-down-worker",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/up-down-worker/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/up-down-worker",
+        "main": "apps/up-down-worker/src/main.ts",
+        "tsConfig": "apps/up-down-worker/tsconfig.app.json",
+        "assets": [
+          {
+            "glob": "**/**/*.proto",
+            "input": "libs/contracts/src",
+            "output": "grpc"
+          }
+        ],
+        "isolatedConfig": true,
+        "webpackConfig": "apps/up-down-worker/webpack.config.js"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "up-down-worker:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "up-down-worker:build:development"
+        },
+        "production": {
+          "buildTarget": "up-down-worker:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/up-down-worker/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/up-down-worker/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

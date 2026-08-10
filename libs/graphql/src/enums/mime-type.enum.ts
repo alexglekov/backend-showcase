@@ -1,0 +1,16 @@
+export enum MimeType {
+  csv = 'text/csv',
+  doc = 'application/msword',
+  docx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  jpeg = 'image/jpeg',
+  jpg = 'image/jpg',
+  mp4 = 'video/mp4',
+  mpeg = 'video/mpeg',
+  ods = 'application/vnd.oasis.opendocument.spreadsheet',
+  odt = 'application/vnd.oasis.opendocument.text',
+  pdf = 'application/pdf',
+  png = 'image/png',
+  svg = 'image/svg+xml',
+  webm = 'video/webm',
+  xlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+}

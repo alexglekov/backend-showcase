@@ -1,0 +1,71 @@
+{
+  "name": "twitter",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/twitter/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/twitter",
+        "main": "apps/twitter/src/main.ts",
+        "tsConfig": "apps/twitter/tsconfig.app.json",
+        "generatePackageJson": true,
+        "assets": [
+          {
+            "glob": "**/**/*.proto",
+            "input": "libs/contracts/src",
+            "output": "grpc"
+          }
+        ],
+        "isolatedConfig": true,
+        "webpackConfig": "apps/twitter/webpack.config.js"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "twitter:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "twitter:build:development"
+        },
+        "production": {
+          "buildTarget": "twitter:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/twitter/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/twitter/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,0 +1,108 @@
+version: '3'
+
+networks:
+  xyro:
+    driver: bridge
+    external: true
+
+services:
+  zoo:
+    image: zookeeper:3.4.9
+    restart: unless-stopped
+    hostname: zoo
+    ports:
+      - '2181:2181'
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+      ZOO_SERVERS: server.1=zoo:2888:3888
+    volumes:
+      - ./docker-volumes/zoo/data:/data
+      - ./docker-volumes/zoo/datalog:/datalog
+    networks:
+      - xyro
+
+  kafka:
+    image: confluentinc/cp-kafka:5.2.1
+    hostname: kafka
+    ports:
+      - '9092:9092'
+      - '9997:9997'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-localhost}:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: 'zoo:2181'
+      KAFKA_JMX_PORT: 9997
+      KAFKA_JMX_OPTS: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka0 -Dcom.sun.management.jmxremote.rmi.port=9997
+      KAFKA_LOG4J_LOGGERS: 'kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - ./docker-volumes/kafka/data:/var/lib/kafka/data
+    depends_on:
+      - zoo
+    networks:
+      - xyro
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8080:8080
+    depends_on:
+      - kafka
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+    networks:
+      - xyro
+
+  cassandra:
+    image: 'bitnami/cassandra'
+    ports:
+      - '7000:7000'
+      - '${AWS_KEYSPACES_PORT:?err}:9042'
+    environment:
+      CASSANDRA_SEEDS: cassandra
+      CASSANDRA_PASSWORD_SEEDER: 'yes'
+      CASSANDRA_USER: ${AWS_KEYSPACES_ACCESS_KEY:?err}
+      CASSANDRA_PASSWORD: ${AWS_KEYSPACES_SECRET_ACCESS_KEY:?err}
+    volumes:
+      - ./docker-volumes/cassandra:/bitnami'
+    networks:
+      - xyro
+
+  redis:
+    image: redis:6.2-rc-alpine
+    ports:
+      - ${REDIS_PORT:?err}:6379
+    networks:
+      - xyro
+
+  postgres-db:
+    image: postgres
+    ports:
+      - ${POSTGRES_PORT:?err}:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?err}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?err}
+    volumes:
+      - './docker-volumes/postgres-db:/var/lib/postgresql/data'
+    networks:
+      - xyro
+
+  minio:
+    image: minio/minio:latest
+    command: server --console-address ":9001" /data/
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY:?err}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:?err}
+    volumes:
+      - './docker-volumes/minio:/var/lib/minio'
+    networks:
+      - xyro

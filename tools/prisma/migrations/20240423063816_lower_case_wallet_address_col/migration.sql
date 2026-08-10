@@ -1,0 +1,4 @@
+CREATE EXTENSION citext;
+
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "walletAddress" SET DATA TYPE CITEXT;

@@ -1,0 +1,125 @@
+{
+  "root": true,
+  "ignorePatterns": ["**/*"],
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:typescript-sort-keys/recommended",
+    "prettier"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module"
+  },
+  "plugins": ["import", "@typescript-eslint/eslint-plugin", "typescript-sort-keys", "sort-keys-fix", "sort-destructure-keys", "@nrwl/nx"],
+  "overrides": [
+    // {
+    //   "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+    //   "rules": {
+    //     "@nrwl/nx/enforce-module-boundaries": [
+    //       "error",
+    //       {
+    //         "enforceBuildableLibDependency": true,
+    //         "allow": [],
+    //         "depConstraints": [
+    //           {
+    //             "sourceTag": "*",
+    //             "onlyDependOnLibsWithTags": ["*"],
+    //           }
+    //         ]
+    //       }
+    //     ]
+    //   }
+    // },
+    {
+      "files": ["*.ts", "*.tsx"],
+      "extends": ["plugin:@nrwl/nx/typescript"],
+      "rules": {}
+    },
+    {
+      "files": ["*.js", "*.jsx"],
+      "extends": ["plugin:@nrwl/nx/javascript"],
+      "rules": {}
+    },
+    {
+      "files": ["*.spec.ts", "*.spec.tsx", "*.spec.js", "*.spec.jsx"],
+      "env": {
+        "jest": true
+      },
+      "rules": {}
+    }
+  ],
+  "rules": {
+    "@typescript-eslint/interface-name-prefix": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/member-ordering": [
+      "warn",
+      {
+        "default": {
+          "memberTypes": [
+            "private-static-field",
+            "public-static-field",
+            "private-instance-field",
+            "public-instance-field",
+            "private-constructor",
+            "public-constructor",
+            "private-instance-method",
+            "protected-instance-method",
+            "public-instance-method"
+          ]
+        }
+      }
+    ],
+    "@typescript-eslint/no-empty-interface": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "arrow-parens": ["error", "always"],
+    "import/order": [
+      "warn",
+      {
+        "alphabetize": {
+          "caseInsensitive": true,
+          "order": "asc"
+        },
+        "groups": [["builtin", "external"], "internal", "parent", "sibling", "index"],
+        "newlines-between": "always",
+        "pathGroups": [{ "group": "internal", "pattern": "@/**" }],
+        "pathGroupsExcludedImportTypes": []
+      }
+    ],
+    "import/prefer-default-export": "off",
+    "max-classes-per-file": ["error", 1],
+    "max-len": ["error", 120],
+    "no-console": ["error", { "allow": ["error"] }],
+    "no-empty-pattern": "warn",
+    "no-return-await": "error",
+    "require-await": "error",
+    "class-methods-use-this": "error",
+    "prefer-const": "error",
+    "complexity": "error",
+    "no-trailing-spaces": "error",
+    "object-shorthand": "error",
+    "no-duplicate-imports": "warn",
+    "padding-line-between-statements": [
+      "error",
+      { "blankLine": "always", "next": "*", "prev": ["const", "let"] },
+      { "blankLine": "always", "next": "class", "prev": "*" },
+      { "blankLine": "always", "next": "export", "prev": "*" },
+      { "blankLine": "any", "next": "export", "prev": "export" },
+      { "blankLine": "always", "next": "for", "prev": "*" },
+      { "blankLine": "always", "next": "function", "prev": "*" },
+      { "blankLine": "always", "next": "if", "prev": "*" },
+      { "blankLine": "always", "next": "return", "prev": "*" },
+      { "blankLine": "always", "next": "switch", "prev": "*" },
+      { "blankLine": "always", "next": "try", "prev": "*" },
+      { "blankLine": "always", "next": "while", "prev": "*" },
+      { "blankLine": "any", "next": ["const", "let"], "prev": ["const", "let"] }
+    ]
+  },
+  "settings": {
+    "import/resolver": {
+      "typescript": {}
+    }
+  }
+}

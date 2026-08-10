@@ -1,0 +1,22 @@
+export enum ConsumersGroups {
+  ApiGatewayConsumer = 'api-gateway-consumer',
+  BackofficeConsumer = 'backoffice-consumer',
+  PricesAppConsumer = 'prices-app-consumer',
+  CandlesAppConsumer = 'candles-app-consumer',
+  UsersAppConsumer = 'users-app-consumer',
+  UpDownAppConsumer = 'up-down-app-consumer',
+  AnalyticsAppConsumer = 'analytics-app-consumer',
+  TwitterAppConsumer = 'twitter-app-consumer',
+  NotificationsAppConsumer = 'notifications-app-consumer',
+  X1000AppConsumer = 'x1000-app-consumer',
+  SetupsAppConsumer = 'setups-app-consumer',
+  BullsEyeAppConsumer = 'bulls-eye-app-consumer',
+  OneVsOneAppConsumer = 'one-vs-one-app-consumer',
+
+  LedgerWorkerConsumer = 'ledger-worker-consumer',
+  UpDownWorkerConsumer = 'up-down-worker-consumer',
+  X1000WorkerConsumer = 'x1000-worker-consumer',
+  SetupsWorkerConsumer = 'setups-worker-consumer',
+  BullsEyeWorkerConsumer = 'bulls-eye-worker-consumer',
+  OneVsOneWorkerConsumer = 'one-vs-one-worker-consumer',
+}

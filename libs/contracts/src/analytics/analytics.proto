@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package analytics;
+
+service AnalyticsService {
+  rpc getDashboardData(Void) returns (DashboardDataResult) {}
+
+  rpc addTelegramBotBonusByWalletAddress(AddTelegramBotBonusByWalletAddressPayload) returns (AddTelegramBotBonusByWalletAddressResult) {}
+}
+
+message DashboardDataResult {
+  repeated DashboardData data = 1;
+}
+
+message AddTelegramBotBonusByWalletAddressPayload {
+  string payload = 1;
+  string signature = 2;
+}
+
+message AddTelegramBotBonusByWalletAddressResult {
+  bool isBonusAdded = 1;
+  bool isSignatureInvalid = 2;
+  bool isUserByAddressNotFound = 4;
+}
+
+message Void {}
+
+message DashboardData {
+  string date = 1;
+  double activeUsers = 2;
+  double userBets = 3;
+  double totalBets = 4;
+  double income = 5;
+  string from = 6;
+  string to = 7;
+}

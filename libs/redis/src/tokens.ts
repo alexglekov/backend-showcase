@@ -1,0 +1,3 @@
+export const REDIS_MODULE_CONFIG_TOKEN = Symbol.for(
+  'REDIS_MODULE_CONFIG_TOKEN',
+);

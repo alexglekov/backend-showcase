@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package users;
+
+service UsersService {
+  rpc CoinsPaidTransactionCallback(CoinsPaidTransactionPayload) returns (Void) {}
+  rpc AcceptWithdrawOrder(AcceptWithdrawOrderPaylaod) returns (Void) {}
+  rpc RejectWithdrawOrder(RejectWithdrawOrderPaylaod) returns (Void) {}
+
+  rpc GetSessionById(GetSessionByIdPayload) returns (Session) {}
+  rpc GetUserById(GetUserByIdPayload) returns (User) {}
+  rpc GetUserByAddress(GetUserByAddressPayload) returns (User) {}
+  rpc RefreshSession(RefreshSessionPayload) returns (Session) {}
+
+  rpc GetCountUserDailyLogins(GetCountUserDailyLoginsPayload) returns (GetCountUserDailyLoginsResult) {}
+
+  rpc GetCountInvitedUsersByUserId(GetCountInvitedUsersByUserIdPayload) returns (GetCountInvitedUsersByUserIdResult) {}
+}
+
+message Void {}
+
+message GetCountInvitedUsersByUserIdPayload {
+  string userId = 1;
+}
+
+message GetCountUserDailyLoginsPayload {
+  string userId = 1;
+}
+
+message GetCountUserDailyLoginsResult {
+  string userId = 1;
+  int32 countDailyLogins = 2;
+}
+
+message GetCountInvitedUsersByUserIdResult {
+  int32 countInvitedUsers = 1;
+}
+
+message AcceptWithdrawOrderPaylaod {
+  string blameId = 1;
+  string orderId = 2;
+}
+
+message RejectWithdrawOrderPaylaod {
+  string blameId = 1;
+  string orderId = 2;
+  string cancelReason = 3;
+}
+
+message RefreshSessionPayload {
+  string refreshToken = 1;
+}
+
+message GetSessionByIdPayload {
+  string sessionId = 1;
+}
+
+message GetUserByIdPayload {
+  string userId = 1;
+}
+
+message GetByUserIdPayload {
+  string userId = 1;
+}
+
+message GetUserByAddressPayload {
+  string address = 1;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  repeated string avatarKeys = 3;
+  repeated string avatarUris = 4;
+  bool isInfluencer = 5;
+  optional string email = 6;
+  optional string discordId = 7;
+  optional string twitterId = 8;
+  optional string walletAddress = 9;
+  string bio = 10;
+}
+
+message Session {
+  string userId = 1;
+  string refreshToken = 2;
+  string sessionId = 3;
+  optional SessionExpiration expiration = 4;
+}
+
+message SessionExpiration {
+  optional int32 session = 1;
+  optional int32 refreshToken = 2;
+}
+
+message CoinsPaidTransactionPayload {
+  string signature = 1;
+  string body = 2;
+}
+
+message ErrorPayload {
+  string type = 1;
+  string message = 2;
+}

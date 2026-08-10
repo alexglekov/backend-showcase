@@ -1,0 +1,3 @@
+export const STORAGE_MODULE_CONFIG_TOKEN = Symbol.for(
+  'STORAGE_MODULE_CONFIG_TOKEN',
+);

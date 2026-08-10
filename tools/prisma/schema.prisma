@@ -1,0 +1,907 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String                   @id @default(uuid()) @db.Uuid
+  name                    String                   @unique
+  avatarKeys              Json?                    @db.JsonB
+  email                   String?                  @unique
+  bio                     String                   @default("")
+  passwordHash            String?
+  discordId               String?                  @unique
+  discordRoles            Json?                    @db.JsonB
+  twitterId               String?                  @unique
+  walletAddress           String?                  @unique @db.Citext
+  isInfluencer            Boolean                  @default(false)
+  passwordRecoveryToken   String?
+  EmailNotificationPolicy EmailNotificationPolicy?
+  PrivacyPolicy           PrivacyPolicy?
+  game1vs1Owner           Game1vs1[]               @relation("Game1vs1Owner")
+  game1vs1Opponent        Game1vs1[]               @relation("Game1vs1Opponent")
+  gameSetup               GameSetup[]
+  gameBullseye            GameBullseye[]
+  bet                     Bet[]
+  Bet1vs1                 Bet1vs1[]
+  BetSetup                BetSetup[]
+  BetBullseye             BetBullseye[]
+  BetUpdown               BetUpDown[]
+  BetX1000                BetX1000[]
+  orders                  PaymentOrder[]
+  GameX1000               GameX1000[]
+  messages                Message[]                @relation("MessageSender")
+  sessions                Session[]
+  notifications           Notifications[]
+  updatedAt               DateTime                 @default(now()) @updatedAt
+  createdAt               DateTime                 @default(now())
+
+  dailyLogins             UserDailyLogin[]
+
+  blockedUserFeatures BlockedUserFeatures?
+  signUpReferral      Referral?            @relation("SignUpReferral")
+  ownReferrals        Referral[]           @relation("OwnReferrals")
+  challengeTasks      UserChallengeTask[]
+  reward              Reward?
+
+  @@index([name], type: Hash)
+}
+
+enum Role {
+  admin
+  developer
+}
+
+model Referral {
+  code       String   @id
+  userId     String   @unique @db.Uuid
+  user       User     @relation("SignUpReferral", fields: [userId], references: [id])
+  referrerId String?  @db.Uuid
+  referrer   User?    @relation("OwnReferrals", fields: [referrerId], references: [id])
+  active     Boolean  @default(true)
+  isReferrerRewardReceived Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
+enum NotificationType {
+  gameResult
+  mention
+}
+
+model Notifications {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  user      User             @relation(fields: [userId], references: [id])
+  body      Json             @db.JsonB
+  type      NotificationType
+  updatedAt DateTime         @updatedAt
+  createdAt DateTime         @default(now())
+  isRead    Boolean          @default(false)
+}
+
+model BackofficeUser {
+  id                        String                        @id @default(uuid()) @db.Uuid
+  name                      String
+  surname                   String
+  email                     String                        @unique
+  passwordHash              String
+  deleted                   Boolean                       @default(false)
+  updatedAt                 DateTime                      @updatedAt
+  createdAt                 DateTime                      @default(now())
+  blameId                   String?                       @db.Uuid
+  blame                     BackofficeUser?               @relation(name: "BackofficeUser_createdUsers", fields: [blameId], references: [id])
+  processedOrders           PaymentOrder[]
+  processedTransactions     PaymentTransaction[]
+  groups                    UsersOnGroups[]
+  affectedGroups            BackofficeGroup[]             @relation(name: "BackofficeUser_affectedGroups")
+  affectedGroupsMembers     UsersOnGroups[]               @relation(name: "BackofficeUser_affectedGroupsMembers")
+  createdUsers              BackofficeUser[]              @relation(name: "BackofficeUser_createdUsers")
+  affectedGroupsPermissions BackofficeGroupsPermissions[] @relation(name: "BackofficeUser_affectedGroupsPermissions")
+}
+
+model UsersOnGroups {
+  id         String          @id @default(uuid()) @db.Uuid
+  userId     String          @db.Uuid
+  deleted    Boolean         @default(false)
+  user       BackofficeUser  @relation(fields: [userId], references: [id])
+  groupId    String          @db.Uuid
+  group      BackofficeGroup @relation(fields: [groupId], references: [id])
+  assignedAt DateTime        @default(now())
+  deletedAt  DateTime?
+  blameId    String?         @db.Uuid
+  blame      BackofficeUser? @relation(name: "BackofficeUser_affectedGroupsMembers", fields: [blameId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model BackofficeGroup {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  archived  Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  users       UsersOnGroups[]
+  permissions BackofficeGroupsPermissions[]
+
+  blameId String?         @db.Uuid
+  blame   BackofficeUser? @relation(name: "BackofficeUser_affectedGroups", fields: [blameId], references: [id])
+}
+
+model BackofficeGroupsPermissions {
+  id           String               @id @default(uuid()) @db.Uuid
+  deleted      Boolean              @default(false)
+  permissionId String               @db.Uuid
+  permission   BackofficePermission @relation(fields: [permissionId], references: [id])
+  groupId      String               @db.Uuid
+  group        BackofficeGroup      @relation(fields: [groupId], references: [id])
+  assignedAt   DateTime             @default(now())
+  deletedAt    DateTime?
+  blameId      String?              @db.Uuid
+  blame        BackofficeUser?      @relation(name: "BackofficeUser_affectedGroupsPermissions", fields: [blameId], references: [id])
+
+  @@unique([groupId, permissionId])
+}
+
+model BackofficePermission {
+  id         String                        @id @default(uuid()) @db.Uuid
+  name       String
+  systemName String                        @unique
+  groups     BackofficeGroupsPermissions[]
+}
+
+enum EmailTokenEnum {
+  VERIFY
+  RESTORE
+}
+
+model EmailToken {
+  id    String         @id @default(uuid()) @db.Uuid
+  email String
+  type  EmailTokenEnum
+  date  DateTime       @default(now())
+}
+
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  refreshToken String   @unique
+  agent        String?
+  ip           String?
+  osName       String?
+  clientName   String?
+  clientType   String?
+  deviceType   String?
+  deviceBrand  String?
+  deviceModel  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+}
+
+enum GameTypeEnum {
+  ONEVSONE
+  SETUP
+  BULLSEYE
+  UPDOWN
+  X1000
+}
+
+enum DirectionEnum {
+  UP
+  DOWN
+}
+
+enum GameStateEnum {
+  DRAFT
+  OPEN
+  INPROGRESS
+  PENDING
+  CLOSE
+}
+
+model Game {
+  id         String        @id @default(uuid()) @db.Uuid
+  type       GameTypeEnum
+  assetId    String
+  startAt    DateTime?
+  stopBetsAt DateTime?
+  endAt      DateTime?
+  startPrice Decimal?      @db.Decimal(20, 8)
+  endPrice   Decimal?      @db.Decimal(20, 8)
+  timeframe  Int
+  state      GameStateEnum
+  data       Json          @db.JsonB
+  pools      Json          @db.JsonB
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now()) @updatedAt
+  asset      Asset         @relation(fields: [assetId], references: [id])
+  bets       Bet[]
+}
+
+model Game1vs1 {
+  id         String         @id @default(uuid()) @db.Uuid
+  type       GameTypeEnum
+  assetId    String
+  startAt    DateTime?
+  stopBetsAt DateTime?
+  endAt      DateTime?
+  startPrice Decimal?       @db.Decimal(20, 8)
+  endPrice   Decimal?       @db.Decimal(20, 8)
+  timeframe  Int
+  state      GameStateEnum
+  data       Json           @db.JsonB
+  pools      Json           @db.JsonB
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @default(now()) @updatedAt
+  ownerId    String         @db.Uuid
+  opponentId String?        @db.Uuid
+  isPrivate  Boolean
+  isExact    Boolean
+  direction  DirectionEnum?
+  owner      User           @relation("Game1vs1Owner", fields: [ownerId], references: [id])
+  opponent   User?          @relation("Game1vs1Opponent", fields: [opponentId], references: [id])
+  asset      Asset          @relation(fields: [assetId], references: [id])
+  bets       Bet1vs1[]
+}
+
+enum GameSetupResultEnum {
+  REJECTED
+  STOP_LOSS
+  TAKE_PROFIT
+}
+
+model GameSetup {
+  id            String               @id @default(uuid()) @db.Uuid
+  type          GameTypeEnum
+  assetId       String
+  startAt       DateTime?
+  stopBetsAt    DateTime?
+  endAt         DateTime?
+  startPrice    Decimal?             @db.Decimal(20, 8)
+  endPrice      Decimal?             @db.Decimal(20, 8)
+  timeframe     Int
+  state         GameStateEnum
+  data          Json                 @db.JsonB
+  pools         Json                 @db.JsonB
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @default(now()) @updatedAt
+  owner         User                 @relation(fields: [ownerId], references: [id])
+  ownerId       String               @db.Uuid
+  isLong        Boolean
+  takeProfit    Decimal              @db.Decimal(20, 8)
+  stopLoss      Decimal              @db.Decimal(20, 8)
+  meta          Json                 @db.JsonB
+  isTrusted     Boolean              @default(false)
+  asset         Asset                @relation(fields: [assetId], references: [id])
+  maxMultiplier Float                @default(0)
+  bets          BetSetup[]
+  result        GameSetupResultEnum?
+  ownerProfit   Decimal?             @db.Decimal(20, 8)
+}
+
+model GameBullseye {
+  id          String        @id @default(uuid()) @db.Uuid
+  type        GameTypeEnum
+  assetId     String
+  startAt     DateTime?
+  stopBetsAt  DateTime?
+  endAt       DateTime?
+  startPrice  Decimal?      @db.Decimal(20, 8)
+  endPrice    Decimal?      @db.Decimal(20, 8)
+  timeframe   Int
+  state       GameStateEnum
+  data        Json          @db.JsonB
+  pools       Json          @db.JsonB
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+  amount      Decimal       @db.Decimal(20, 8)
+  bets        BetBullseye[]
+  winnerId    String?       @db.Uuid
+  winner      User?         @relation(fields: [winnerId], references: [id])
+  winnerBetId String?       @db.Uuid
+
+  @@unique([state])
+}
+
+model GameUpDown {
+  id         String        @id @default(uuid()) @db.Uuid
+  type       GameTypeEnum
+  assetId    String
+  startAt    DateTime?
+  stopBetsAt DateTime?
+  endAt      DateTime?
+  startPrice Decimal?      @db.Decimal(20, 8)
+  endPrice   Decimal?      @db.Decimal(20, 8)
+  timeframe  Int
+  state      GameStateEnum
+  data       Json          @db.JsonB
+  pools      Json          @db.JsonB
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now()) @updatedAt
+  asset      Asset         @relation(fields: [assetId], references: [id])
+  bets       BetUpDown[]
+  isUp       Boolean?
+
+  @@unique([state])
+}
+
+model GameX1000 {
+  id         String        @id @default(uuid()) @db.Uuid
+  type       GameTypeEnum
+  assetId    String
+  startAt    DateTime?
+  stopBetsAt DateTime?
+  endAt      DateTime?
+  startPrice Decimal?      @db.Decimal(20, 8)
+  endPrice   Decimal?      @db.Decimal(20, 8)
+  timeframe  Int           @default(0)
+  state      GameStateEnum
+  data       Json          @db.JsonB
+  pools      Json          @db.JsonB
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now()) @updatedAt
+  ownerId    String        @db.Uuid
+
+  asset Asset      @relation(fields: [assetId], references: [id])
+  owner User       @relation(fields: [ownerId], references: [id])
+  bets  BetX1000[]
+}
+
+enum BetTypeEnum {
+  PRICE
+  UPDOWN
+}
+
+enum BetResultEnum {
+  WON
+  LOSS
+  REJECT
+  PENDING
+  INPROGRESS
+  OPEN
+}
+
+model Bet {
+  id          String        @id @default(uuid()) @db.Uuid
+  gameId      String        @db.Uuid
+  gameType    GameTypeEnum
+  ownerId     String        @db.Uuid
+  type        BetTypeEnum
+  multiplier  Float         @default(0)
+  amount      Decimal       @db.Decimal(20, 8)
+  fee         Decimal?      @db.Decimal(20, 8)
+  pnl         Decimal?      @db.Decimal(20, 8)
+  result      BetResultEnum @default(INPROGRESS)
+  outcome     Decimal?      @db.Decimal(20, 8)
+  price       Decimal?      @db.Decimal(20, 8)
+  isUp        Boolean?
+  priceResult Decimal?      @db.Decimal(20, 8)
+  isUpResult  Boolean?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id])
+  game  Game @relation(fields: [gameId], references: [id])
+}
+
+model Bet1vs1 {
+  id          String        @id @default(uuid()) @db.Uuid
+  gameId      String        @db.Uuid
+  gameType    GameTypeEnum
+  ownerId     String        @db.Uuid
+  type        BetTypeEnum
+  multiplier  Float         @default(0)
+  amount      Decimal       @db.Decimal(20, 8)
+  fee         Decimal?      @db.Decimal(20, 8)
+  pnl         Decimal?      @db.Decimal(20, 8)
+  result      BetResultEnum @default(INPROGRESS)
+  outcome     Decimal?      @db.Decimal(20, 8)
+  price       Decimal?      @db.Decimal(20, 8)
+  isUp        Boolean?
+  priceResult Decimal?      @db.Decimal(20, 8)
+  isUpResult  Boolean?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  owner User     @relation(fields: [ownerId], references: [id])
+  game  Game1vs1 @relation(fields: [gameId], references: [id])
+}
+
+model BetSetup {
+  id          String        @id @default(uuid()) @db.Uuid
+  gameId      String        @db.Uuid
+  gameType    GameTypeEnum
+  ownerId     String        @db.Uuid
+  type        BetTypeEnum
+  multiplier  Float         @default(0)
+  amount      Decimal       @db.Decimal(20, 8)
+  fee         Decimal?      @db.Decimal(20, 8)
+  pnl         Decimal?      @db.Decimal(20, 8)
+  result      BetResultEnum @default(INPROGRESS)
+  outcome     Decimal?      @db.Decimal(20, 8)
+  price       Decimal?      @db.Decimal(20, 8)
+  isUp        Boolean?
+  priceResult Decimal?      @db.Decimal(20, 8)
+  isUpResult  Boolean?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  owner User      @relation(fields: [ownerId], references: [id])
+  game  GameSetup @relation(fields: [gameId], references: [id])
+
+  @@unique([ownerId, gameId])
+}
+
+model BetBullseye {
+  id          String        @id @default(uuid()) @db.Uuid
+  gameId      String        @db.Uuid
+  gameType    GameTypeEnum
+  ownerId     String        @db.Uuid
+  type        BetTypeEnum
+  multiplier  Float         @default(0)
+  amount      Decimal       @db.Decimal(20, 8)
+  fee         Decimal?      @db.Decimal(20, 8)
+  pnl         Decimal?      @db.Decimal(20, 8)
+  result      BetResultEnum @default(INPROGRESS)
+  outcome     Decimal?      @db.Decimal(20, 8)
+  isExact     Boolean       @default(false)
+  price       Decimal?      @db.Decimal(20, 8)
+  isUp        Boolean?
+  priceResult Decimal?      @db.Decimal(20, 8)
+  isUpResult  Boolean?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  owner User         @relation(fields: [ownerId], references: [id])
+  game  GameBullseye @relation(fields: [gameId], references: [id])
+
+  place Int?
+
+  @@unique([ownerId, gameId])
+}
+
+model BetUpDown {
+  id          String        @id @default(uuid()) @db.Uuid
+  gameId      String        @db.Uuid
+  gameType    GameTypeEnum
+  ownerId     String        @db.Uuid
+  type        BetTypeEnum
+  multiplier  Float         @default(0)
+  amount      Decimal       @db.Decimal(20, 8)
+  fee         Decimal?      @db.Decimal(20, 8)
+  pnl         Decimal?      @db.Decimal(20, 8)
+  result      BetResultEnum @default(INPROGRESS)
+  outcome     Decimal?      @db.Decimal(20, 8)
+  price       Decimal?      @db.Decimal(20, 8)
+  isUp        Boolean?
+  priceResult Decimal?      @db.Decimal(20, 8)
+  isUpResult  Boolean?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  owner User       @relation(fields: [ownerId], references: [id])
+  game  GameUpDown @relation(fields: [gameId], references: [id])
+
+  @@unique([ownerId, gameId])
+}
+
+enum FeeTypeEnum {
+  FLAT_FEE
+  PNL_FEE
+}
+
+model BetX1000 {
+  id          String        @id @default(uuid()) @db.Uuid
+  gameId      String        @db.Uuid
+  gameType    GameTypeEnum
+  ownerId     String        @db.Uuid
+  type        BetTypeEnum
+  multiplier  Float         @default(0)
+  amount      Decimal       @db.Decimal(20, 8)
+  fee         Decimal?      @db.Decimal(20, 8)
+  pnl         Decimal?      @db.Decimal(20, 8)
+  result      BetResultEnum @default(INPROGRESS)
+  outcome     Decimal?      @db.Decimal(20, 8)
+  price       Decimal?      @db.Decimal(20, 8)
+  isUp        Boolean?
+  priceResult Decimal?      @db.Decimal(20, 8)
+  isUpResult  Boolean?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  roi        Decimal?    @db.Decimal(20, 8)
+  feeType    FeeTypeEnum
+  startAt    DateTime
+  startPrice Decimal     @db.Decimal(20, 8)
+  endPrice   Decimal?    @db.Decimal(20, 8)
+  isLong     Boolean
+  takeProfit Decimal?    @db.Decimal(20, 8)
+  stopLoss   Decimal?    @db.Decimal(20, 8)
+  burnPrice  Decimal?    @db.Decimal(20, 8)
+
+  owner User      @relation(fields: [ownerId], references: [id])
+  game  GameX1000 @relation(fields: [gameId], references: [id])
+}
+
+model Asset {
+  id         String       @id @unique
+  name       String
+  active     Boolean
+  precision  Int          @default(4)
+  prices     AssetPrice[]
+  Game       Game[]
+  Game1vs1   Game1vs1[]
+  GameSetup  GameSetup[]
+  GemeUpDown GameUpDown[]
+  GameX1000  GameX1000[]
+}
+
+model AssetPrice {
+  id        String   @id @default(uuid()) @db.Uuid
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id])
+  price     Decimal  @db.Decimal(20, 8)
+  timestamp DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Account {
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String
+  fullName       String           @unique
+  parent         Account?         @relation("Children", fields: [parentId], references: [id])
+  parentId       String?          @db.Uuid
+  entries        Entry[]
+  balance        Balance?
+  balanceHistory BalanceHistory[]
+  createdAt      DateTime         @default(now())
+  children       Account[]        @relation("Children")
+  isCreditPlus   Boolean          @default(false)
+}
+
+enum EntryType {
+  networkFee
+  hold
+  unhold
+  bonus
+  bonusRemoved
+  userDeposit
+  userWithdraw
+  hourlyFee
+  userAddBet
+  gameResolve
+  userRejectedBet
+  userWon
+  userLose
+  notDefined
+}
+
+model Entry {
+  id        String    @id @default(uuid()) @db.Uuid
+  amount    Decimal   @db.Decimal(20, 8)
+  isCredit  Boolean
+  meta      Json?
+  type      EntryType @default(notDefined)
+  details   String    @default("No details")
+  accountId String    @db.Uuid
+  account   Account   @relation(fields: [accountId], references: [id])
+  journalId String?   @db.Uuid
+  journal   Journal?  @relation(fields: [journalId], references: [id])
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+model Journal {
+  id                String           @id @default(uuid()) @db.Uuid
+  name              String
+  balancesHistories BalanceHistory[]
+  entries           Entry[]
+}
+
+model Balance {
+  id        String   @id @default(uuid()) @db.Uuid
+  accountId String   @unique @db.Uuid
+  account   Account  @relation(fields: [accountId], references: [id])
+  amount    Decimal
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  rewardBalance Reward?
+}
+
+model BalanceHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  accountId String   @db.Uuid
+  account   Account  @relation(fields: [accountId], references: [id])
+  amount    Decimal
+  journalId String?  @db.Uuid
+  journal   Journal? @relation(fields: [journalId], references: [id])
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+enum PaymentType {
+  DEPOSIT
+  WITHDRAW
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  NOT_CONFIRMED
+  CANCELLED
+}
+
+model PaymentTransaction {
+  id              String        @id @default(uuid()) @db.Uuid
+  foreignId       String        @unique @db.Uuid
+  paymentSystem   String
+  transactionHash String?
+  confirmations   Int?
+  status          PaymentStatus
+  type            PaymentType
+  error           String?
+  currency        String
+  originalAmount  Decimal?      @db.Decimal(20, 8)
+  amount          Decimal?      @db.Decimal(20, 8)
+  address         String
+  platformFee     Decimal?      @db.Decimal(20, 8)
+  networkFee      Decimal?      @db.Decimal(20, 8)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  order   PaymentOrder?
+  blameId String?         @db.Uuid
+  blame   BackofficeUser? @relation(fields: [blameId], references: [id])
+}
+
+model PaymentOrder {
+  id            String             @id @default(uuid()) @db.Uuid
+  transactionId String             @unique @db.Uuid
+  transaction   PaymentTransaction @relation(fields: [transactionId], references: [id])
+  type          PaymentType
+  status        PaymentStatus
+  cancelReason  String?
+  ownerId       String             @db.Uuid
+  owner         User               @relation(fields: [ownerId], references: [id])
+  blameId       String?            @db.Uuid
+  blame         BackofficeUser?    @relation(fields: [blameId], references: [id])
+  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime           @default(now())
+}
+
+model EmailNotificationPolicy {
+  id                       String  @id @default(uuid()) @db.Uuid
+  userId                   String  @unique @db.Uuid
+  sendNotificationsToEmail Boolean @default(true)
+  notifyBetsResult         Boolean @default(true)
+  notifyBettingInvitation  Boolean @default(true)
+  notifyNewAchievements    Boolean @default(true)
+  notifyUpdates            Boolean @default(true)
+  user                     User    @relation(fields: [userId], references: [id])
+}
+
+model PrivacyPolicy {
+  id                    String  @id @default(uuid()) @db.Uuid
+  userId                String  @unique @db.Uuid
+  showProfile           Boolean @default(true)
+  showAchievements      Boolean @default(true)
+  showSetups            Boolean @default(true)
+  showStats             Boolean @default(true)
+  showBettingHistory    Boolean @default(true)
+  allowTagInChat        Boolean @default(true)
+  allowInviteIn1vs1Game Boolean @default(true)
+  user                  User    @relation(fields: [userId], references: [id])
+}
+
+enum RoomTypesEnum {
+  GLOBAL
+  TECHNICAL_SUPPORT
+}
+
+model Room {
+  id       String        @id @default(uuid()) @db.Uuid
+  type     RoomTypesEnum
+  messages Message[]     @relation("RoomMessages")
+  meta     Json?
+}
+
+model Message {
+  id        String    @id @default(uuid()) @db.Uuid
+  text      String    @db.Text
+  sender    User      @relation("MessageSender", fields: [senderId], references: [id])
+  senderId  String    @db.Uuid
+  tagList   Json?     @db.JsonB
+  room      Room      @relation("RoomMessages", fields: [roomId], references: [id])
+  roomId    String    @db.Uuid
+  createdAt DateTime  @default(now())
+  replyTo   Message?  @relation("RepliesToMessage", fields: [replyToId], references: [id])
+  replyToId String?   @db.Uuid
+  replies   Message[] @relation("RepliesToMessage")
+}
+
+model BlockedUserFeatures {
+  userId           String  @id @db.Uuid
+  user             User    @relation(fields: [userId], references: [id])
+  allowSendMessage Boolean @default(true)
+}
+
+model Season {
+  id                String              @id
+  name              String
+  active            Boolean
+  description       String
+  challenges        SeasonChallenge[]
+  tasks             ChallengeTask[]
+  usersRelatedTasks UserChallengeTask[]
+}
+
+model SeasonChallenge {
+  id                String              @id
+  name              String
+  description       String
+  number            Int
+  seasonId          String
+  season            Season              @relation(fields: [seasonId], references: [id])
+  tasks             ChallengeTask[]
+  usersRelatedTasks UserChallengeTask[]
+}
+
+enum ChallengeTaskPattern {
+  ENRICH_PROFILE
+  CONNECT_WITH_X
+  CONNECT_WALLET_CHALLENGE
+  SHARE_CHALLENGE
+  DISCORD_CHALLENGE
+  COMMUNITY_CHALLENGE
+  INVITE_USERS
+  PLAY_ANY_GAME
+  PLAY_SETUP_GAMES
+  CREATE_CHAT_MESSAGES
+  WON_GAMES
+  WHALE_SQUAD
+  SOCIAL_TRIBE_CHALLENGE
+  SHAROOOORS_CHALLENGE
+}
+
+model ChallengeTask {
+  id                String               @id
+  name              String
+  seasonId          String
+  description       String
+  number            Int
+  reward            Decimal
+  pattern           ChallengeTaskPattern
+  blockedByTaskId   String?
+  configuration     Json?                @db.JsonB
+  challengeId       String
+  blockedByTask     ChallengeTask?       @relation(name: "ChallengeTask_nextTasks", fields: [blockedByTaskId], references: [id])
+  blockingTasks     ChallengeTask[]      @relation(name: "ChallengeTask_nextTasks")
+  season            Season               @relation(fields: [seasonId], references: [id])
+  challenge         SeasonChallenge      @relation(fields: [challengeId], references: [id])
+  usersRelatedTasks UserChallengeTask[]
+}
+
+enum UserChallengeTaskStatus {
+  NOT_COMPLETED
+  COMPLETED
+  CLAIMED
+}
+
+model UserChallengeTask {
+  id          String                  @id @default(uuid()) @db.Uuid
+  seasonId    String
+  challengeId String
+  taskId      String
+  userId      String                  @db.Uuid
+  isActive    Boolean                 @default(false)
+  status      UserChallengeTaskStatus @default(NOT_COMPLETED)
+  task        ChallengeTask           @relation(fields: [taskId], references: [id])
+  user        User                    @relation(fields: [userId], references: [id])
+  season      Season                  @relation(fields: [seasonId], references: [id])
+  challenge   SeasonChallenge         @relation(fields: [challengeId], references: [id])
+
+  @@unique([userId, taskId])
+}
+
+model Reward {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @unique @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  balanceId    String   @unique @db.Uuid
+  balance      Balance  @relation(fields: [balanceId], references: [id])
+  rewards      Decimal  @default(0)
+  referralRewards      Decimal  @default(0)
+  challengeBonusOffset Int @default(0)
+  lastPlace    Int?
+  currentPlace Int?
+}
+
+model NftHolder {
+  address   String @id @db.Citext
+  common    Int
+  rare      Int
+  epic      Int
+  legendary Int
+}
+
+model UserNftBonusState {
+  address   String @id @db.Citext
+  common    Int
+  rare      Int
+  epic      Int
+  legendary Int
+}
+
+model UserBonusState {
+  address     String @id @db.Citext
+  amount      Decimal
+  isReceived  Boolean @default(false)
+}
+
+model Blockchain {
+  network       String @id
+  chainId       Int    @unique
+  lastScanBlock BigInt
+}
+
+// Twitter
+
+model TwitterAuthToken {
+  twitterId               String  @id  @unique
+  accessToken      String
+  refreshToken     String?
+}
+
+model TwitterOffset {
+  id   String     @id @default(uuid()) @db.Uuid
+  tweetId     String
+  type        String
+  nextToken   String?
+  startToken  String?
+  endToken    String?
+
+  @@unique([tweetId, type])
+}
+
+model Tweet {
+  tweetId     String  @id @unique
+  text        String
+  isDeleted   Boolean @default(false)
+  createdAt   DateTime
+}
+
+model TweetLike {
+  id   String     @id @default(uuid()) @db.Uuid
+  twitterId   String
+  tweetId   String
+
+  @@unique([twitterId, tweetId])
+}
+
+model Retweet {
+  id   String      @id @default(uuid()) @db.Uuid
+  twitterId   String
+  tweetId   String
+  withQuote Boolean @default(false)
+  quoteText String?
+
+  @@unique([twitterId, tweetId, withQuote])
+}
+
+model UserDailyLogin {
+  id           String   @id @default(uuid()) @unique
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  date         DateTime @db.Date
+
+  @@index([userId])
+  @@unique([userId, date])
+}

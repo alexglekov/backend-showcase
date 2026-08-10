@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package bullsEye;
+
+service BullsEyeService {
+  rpc GetBetBy(GetBetByPaylaod) returns (BullsEyeBet) {}
+}
+
+message Void {}
+
+message GetBetByPaylaod {
+  optional string gameId = 1;
+  optional string ownerId = 2;
+}
+
+message BullsEyeBet {
+  bool   isExact = 10;
+  string id = 1;
+  string gameId = 2;
+  string ownerId = 3;
+  string type = 4;
+  double amount = 5;
+  string result = 8;
+  string createdAt = 15;
+  optional int32 place = 16;
+  optional double fee = 6;
+  optional double pnl = 7;
+  optional double outcome = 9;
+  optional double price = 11;
+  optional bool   isUp = 12;
+  optional double priceResult = 13;
+  optional bool   isUpResult = 14;
+}

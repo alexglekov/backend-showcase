@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "NftHolder" ALTER COLUMN "address" SET DATA TYPE CITEXT;

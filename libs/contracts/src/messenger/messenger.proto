@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package messenger;
+
+service MessengerService {
+  rpc GetUserMessagesAmount(GetUserMessagesAmountPayload) returns (GetUserMessagesAmountResult) {}
+}
+
+message GetUserMessagesAmountPayload {
+  string userId = 1;
+}
+
+message GetUserMessagesAmountResult {
+  int32 amount = 1;
+}
+
+message Void {}

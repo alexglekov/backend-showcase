@@ -1,0 +1,3 @@
+export const MAILER_MODULE_CONFIG_TOKEN = Symbol.for(
+  'MAILER_MODULE_CONFIG_TOKEN',
+);

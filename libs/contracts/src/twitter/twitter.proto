@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package twitter;
+
+service TwitterService {
+  rpc getOAuth2Uri(GetOAuth2UriPayload) returns (TwitterOAuth2) {}
+  rpc loginWithOAuth2(LoginWithOAuth2Payload) returns (TwitterAccount) {}
+  rpc getAccountById(GetAccountByIdPayload) returns (TwitterAccount) {}
+
+  // Work with twitter
+  rpc IsTweetRetweetedByAccount(IsTweetRetweetedByAccountPayload) returns (IsTweetRetweetedByAccountResult) {}
+  rpc countLikedTweetsByAccount(CountLikedTweetsByAccountPayload) returns (CountLikedTweetsByAccountResult) {}
+  rpc countAccountTweetsAndLikesOnTweets(CountAccountTweetsAndLikesOnTweetsPayload) returns (CountAccountTweetsAndLikesOnTweetsResult) {}
+}
+
+message CountAccountTweetsAndLikesOnTweetsPayload {
+  string twitterId = 1;
+  repeated string mentions = 2;
+}
+
+message CountAccountTweetsAndLikesOnTweetsResult {
+  int32 countTweets = 1;
+  int32 countLikesOnTweets = 2;
+}
+
+message CountLikedTweetsByAccountPayload {
+  string twitterId = 1;
+}
+
+message CountLikedTweetsByAccountResult {
+  int32 countLikedTweets = 1;
+  string twitterId = 2;
+}
+
+message IsTweetRetweetedByAccountPayload {
+  string tweetId = 1;
+  string twitterId = 2;
+}
+
+message IsTweetRetweetedByAccountResult {
+  bool isRetweeted = 1;
+  string tweetId = 2;
+  string twitterId = 3;
+}
+
+message GetOAuth2UriPayload {
+  string redirectUri = 1;
+}
+
+message LoginWithOAuth2Payload {
+  string code = 1;
+  string redirectUri = 2;
+  string codeVerifier = 3;
+}
+
+message TwitterOAuth2 {
+  string url = 1;
+  string state = 2;
+  string codeVerifier = 3;
+}
+
+message GetAccountByIdPayload {
+  string twitterId = 1;
+}
+
+message TwitterAccount {
+  string id = 1;
+  string name = 2;
+  string username = 3;
+  optional string description = 4;
+  optional string profileImageUrl = 5;
+}
+
+message Void {}

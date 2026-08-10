@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Bet" ADD COLUMN     "multiplier" DOUBLE PRECISION NOT NULL DEFAULT 0;

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package prices;
+
+service PricesService {
+  rpc getAssetCurrentPrice(AssetIdPayload) returns (AssetPricePayload) {}
+  rpc getAssetPriceAtTime(AssetAtTimePayload) returns (AssetPricePayload) {}
+}
+
+message AssetIdPayload {
+  string assetId = 1;
+}
+
+message AssetAtTimePayload {
+  string assetId = 1;
+  int32 timestamp = 2;
+}
+
+message AssetPricePayload {
+  double price = 1;
+  int32 timestamp = 2;
+}
